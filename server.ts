@@ -23,7 +23,8 @@ async function startServer() {
   app.set('trust proxy', true);
   const PORT = process.env.PORT || 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '25mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
   // -------------------------------------------------------------
   // REAL-TIME SYNCHRONIZATION VIA SERVER-SENT EVENTS (SSE)
@@ -333,6 +334,16 @@ async function startServer() {
     } catch (err: any) {
       res.status(500).json({ error: 'Failed to reset sample data' });
     }
+  });
+
+  // Global API error handling to ensure all errors return clean JSON
+  app.use((err: any, _req: Request, res: Response, next: any) => {
+    if (res.headersSent) {
+      return next(err);
+    }
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || 'Internal server error';
+    res.status(status).json({ error: message });
   });
 
   // -------------------------------------------------------------

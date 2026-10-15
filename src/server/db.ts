@@ -608,9 +608,18 @@ class DatabaseManager extends EventEmitter {
   }
 
   public createScholar(data: Partial<Scholar>, admin: AdminUser): Scholar {
-    const nextSeq = this.db.scholars.length + 1;
-    const scholarId =
-      data.scholarId || `DS-2026-${String(nextSeq).padStart(4, '0')}`;
+    let scholarId = data.scholarId?.trim();
+    if (!scholarId) {
+      let maxSeq = 0;
+      for (const s of this.db.scholars) {
+        const match = s.scholarId.match(/OSC-2024-(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (num > maxSeq) maxSeq = num;
+        }
+      }
+      scholarId = `OSC-2024-${String(maxSeq + 1).padStart(4, '0')}`;
+    }
     const qrToken = generateSecureToken();
 
     const newScholar: Scholar = {
@@ -906,15 +915,42 @@ class DatabaseManager extends EventEmitter {
     const totalHours = completedRecords.reduce((sum, r) => sum + r.durationHours, 0);
 
     // Group by scholar
-    const scholarHoursMap: { [id: string]: { scholar: Scholar; hours: number; sessionsCount: number } } = {};
+    const scholarHoursMap: {
+      [id: string]: {
+        scholar: Scholar;
+        hours: number;
+        sessionsCount: number;
+        activeShift?: AttendanceRecord;
+        lastSessionDate?: string;
+      };
+    } = {};
     for (const scholar of this.db.scholars) {
       scholarHoursMap[scholar.id] = { scholar, hours: 0, sessionsCount: 0 };
     }
 
     for (const rec of completedRecords) {
-      if (scholarHoursMap[rec.scholarId]) {
-        scholarHoursMap[rec.scholarId].hours += rec.durationHours;
-        scholarHoursMap[rec.scholarId].sessionsCount += 1;
+      // Find matching scholar entry either by id or scholarId code
+      const entry =
+        scholarHoursMap[rec.scholarId] ||
+        Object.values(scholarHoursMap).find((e) => e.scholar.scholarId === rec.scholarCode);
+      if (entry) {
+        entry.hours += rec.durationHours;
+        entry.sessionsCount += 1;
+        if (!entry.lastSessionDate || rec.sessionDate > entry.lastSessionDate) {
+          entry.lastSessionDate = rec.sessionDate;
+        }
+      }
+    }
+
+    // Check active IN_PROGRESS shifts for scholars
+    for (const rec of this.db.attendanceRecords) {
+      if (rec.status === 'IN_PROGRESS') {
+        const entry =
+          scholarHoursMap[rec.scholarId] ||
+          Object.values(scholarHoursMap).find((e) => e.scholar.scholarId === rec.scholarCode);
+        if (entry && !entry.activeShift) {
+          entry.activeShift = rec;
+        }
       }
     }
 

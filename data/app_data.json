@@ -1,6 +1,22 @@
 {
   "scholars": [
     {
+      "id": "sch-5bb48f18-67d3-41f1-a611-2f2fec8bcff6",
+      "scholarId": "OSC-2024-0001",
+      "fullName": "Jhovhert Bogtong",
+      "profilePhoto": "",
+      "program": "BS Information Technology",
+      "department": "Office of Student Affairs (OSA)",
+      "yearLevel": "1st Year",
+      "contactNumber": "",
+      "email": "",
+      "assignedSchedule": "Morning Shift (08:00 AM - 12:00 PM)",
+      "status": "active",
+      "dateRegistered": "2026-10-15",
+      "remarks": "",
+      "qrToken": "OSC-A1638E6ED791B433D9F0AD94F457853C"
+    },
+    {
       "id": "sch-001",
       "scholarId": "DS-2026-0001",
       "fullName": "Arambulo, Maria Sofia V.",
@@ -210,7 +226,7 @@
       "role": "Super Admin",
       "salt": "3b386ca1025112c11fffaa5a4acf8f24",
       "passwordHash": "9d271e4af4f83433653531365ac1f28b06ae454be8936862dbb13c795397b96ad1af05f1df732ca9b6219f2a69c0590264a1b81f8cc0275412ab959eb375ac33",
-      "lastLogin": "2026-10-15T01:08:20.174Z"
+      "lastLogin": "2026-10-15T01:43:11.871Z"
     },
     {
       "id": "admin-002",
@@ -228,10 +244,40 @@
       "role": "Super Admin",
       "salt": "3b386ca1025112c11fffaa5a4acf8f24",
       "passwordHash": "9d271e4af4f83433653531365ac1f28b06ae454be8936862dbb13c795397b96ad1af05f1df732ca9b6219f2a69c0590264a1b81f8cc0275412ab959eb375ac33",
-      "lastLogin": "2026-10-15T01:08:20.174Z"
+      "lastLogin": "2026-10-15T01:15:40.079Z"
     }
   ],
   "auditLogs": [
+    {
+      "id": "aud-6fbb30d0-23ba-44f3-8085-d5ede22c1c8d",
+      "action": "CREATE_SCHOLAR",
+      "targetType": "scholar",
+      "targetId": "sch-230d81c5-e819-4412-b9e8-c9d8236a048d",
+      "adminEmail": "admin@osc.edu.ph",
+      "adminName": "Dr. Raymond C. Valenzuela",
+      "newValue": {
+        "id": "sch-230d81c5-e819-4412-b9e8-c9d8236a048d",
+        "scholarId": "OSC-2024-0001",
+        "fullName": "Jhovhert Bogtong Test"
+      },
+      "reason": "Registered new scholar Jhovhert Bogtong Test (OSC-2024-0001)",
+      "timestamp": "2026-10-15T01:43:11.904Z"
+    },
+    {
+      "id": "aud-5f9f2760-544f-4363-b766-cc60eb02e9eb",
+      "action": "CREATE_SCHOLAR",
+      "targetType": "scholar",
+      "targetId": "sch-5bb48f18-67d3-41f1-a611-2f2fec8bcff6",
+      "adminEmail": "admin@osc.edu.ph",
+      "adminName": "Dr. Raymond C. Valenzuela",
+      "newValue": {
+        "id": "sch-5bb48f18-67d3-41f1-a611-2f2fec8bcff6",
+        "scholarId": "230082",
+        "fullName": "Jhovhert Bogtong"
+      },
+      "reason": "Registered new scholar Jhovhert Bogtong (230082)",
+      "timestamp": "2026-10-15T01:25:45.673Z"
+    },
     {
       "id": "aud-001",
       "action": "SYSTEM_INITIALIZATION",

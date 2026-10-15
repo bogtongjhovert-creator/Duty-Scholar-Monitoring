@@ -76,20 +76,27 @@ export default function ScholarsTab() {
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
-  // ID generator: produces 6-digit student number like 230082, 260184
+  // ID generator: format strictly OSC-2024-0001
   const generateUniqueScholarId = () => {
-    const yearPrefix = new Date().getFullYear().toString().slice(-2);
-    const randomDigits = Math.floor(1000 + Math.random() * 9000);
-    return `${yearPrefix}${randomDigits}`;
+    let maxSeq = 0;
+    for (const s of scholars) {
+      const match = s.scholarId.match(/OSC-2024-(\d+)/i);
+      if (match) {
+        const num = parseInt(match[1], 10);
+        if (num > maxSeq) maxSeq = num;
+      }
+    }
+    const nextSeq = String(maxSeq + 1).padStart(4, '0');
+    return `OSC-2024-${nextSeq}`;
   };
 
-  // Profile image upload handler (reads image & optimizes resolution)
+  // Profile image upload handler (reads image & optimizes resolution to prevent large payloads)
   const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      setModalError('Photo must be less than 5MB');
+    if (file.size > 10 * 1024 * 1024) {
+      setModalError('Photo must be less than 10MB');
       return;
     }
 
@@ -99,7 +106,7 @@ export default function ScholarsTab() {
       img.src = reader.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');
-        const maxDim = 400;
+        const maxDim = 320;
         let width = img.width;
         let height = img.height;
         if (width > maxDim || height > maxDim) {
@@ -114,11 +121,19 @@ export default function ScholarsTab() {
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        setFormData((prev) => ({ ...prev, profilePhoto: dataUrl }));
-        setModalError(null);
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+          setFormData((prev) => ({ ...prev, profilePhoto: dataUrl }));
+          setModalError(null);
+        }
       };
+      img.onerror = () => {
+        setModalError('Failed to read photo image');
+      };
+    };
+    reader.onerror = () => {
+      setModalError('Failed to read image file');
     };
     reader.readAsDataURL(file);
   };
@@ -518,12 +533,76 @@ export default function ScholarsTab() {
 
             <form onSubmit={handleSaveScholar} className="p-6 space-y-4 overflow-y-auto">
               {modalError && (
-                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs">
-                  {modalError}
+                <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center justify-between">
+                  <span>{modalError}</span>
+                  <button
+                    type="button"
+                    onClick={() => setModalError(null)}
+                    className="text-rose-500 hover:text-rose-700 ml-2"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
               )}
 
-              {/* 1. Upload Profile */}
+              {/* 1. Full Name */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                    <User className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="e.g. Jhovhert Bogtong"
+                    value={formData.fullName || ''}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    required
+                    autoFocus
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                  />
+                </div>
+              </div>
+
+              {/* 2. Generate a ID Number */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                    ID Number <span className="text-rose-500">*</span>
+                  </label>
+                  <span className="text-[11px] font-mono text-slate-500 font-medium">
+                    Format: <span className="text-emerald-700 font-semibold">OSC-2024-0001</span>
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="OSC-2024-0001"
+                    value={formData.scholarId || ''}
+                    onChange={(e) => setFormData({ ...formData, scholarId: e.target.value.toUpperCase() })}
+                    required
+                    className="w-full px-3 py-2 text-sm font-mono uppercase font-medium border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
+                  />
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        scholarId: generateUniqueScholarId(),
+                      }))
+                    }
+                    className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold shrink-0 cursor-pointer inline-flex items-center gap-1.5 transition-colors"
+                    title="Generate ID Number in OSC-2024-0001 format"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                    <span>Generate ID Number</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Upload Profile */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
                   Upload Profile
@@ -577,75 +656,9 @@ export default function ScholarsTab() {
                       )}
                     </div>
                     <p className="text-[11px] text-slate-500">
-                      Upload portrait photo from device or camera
+                      Upload portrait photo from device or camera (auto-optimized)
                     </p>
                   </div>
-                </div>
-              </div>
-
-              {/* 2. Full Name */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Full Name <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                    <User className="w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="e.g. Jhovhert Bogtong"
-                    value={formData.fullName || ''}
-                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    required
-                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
-                  />
-                </div>
-              </div>
-
-              {/* 3. Generate a ID Number */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                    ID Number <span className="text-rose-500">*</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        scholarId: generateUniqueScholarId(),
-                      }))
-                    }
-                    className="text-xs text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center gap-1 cursor-pointer"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                    <span>Generate ID</span>
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="e.g. 230082"
-                    value={formData.scholarId || ''}
-                    onChange={(e) => setFormData({ ...formData, scholarId: e.target.value })}
-                    required
-                    className="w-full px-3 py-2 text-sm font-mono uppercase border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-slate-900"
-                  />
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        scholarId: generateUniqueScholarId(),
-                      }))
-                    }
-                    className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-lg text-xs font-semibold shrink-0 cursor-pointer inline-flex items-center gap-1.5 transition-colors"
-                    title="Generate a unique ID number"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Generate ID</span>
-                  </button>
                 </div>
               </div>
 

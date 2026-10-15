@@ -38,7 +38,7 @@ export default function AdminLayout({ user, onLogout, onSwitchToPublic }: AdminL
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'scholars', label: 'Duty Scholars', icon: Users },
     { id: 'attendance', label: 'Attendance Records', icon: CalendarCheck },
-    { id: 'reports', label: 'Reports & Hours', icon: BarChart3 },
+    { id: 'reports', label: 'Summary Reports', icon: BarChart3 },
     { id: 'settings', label: 'Settings & Audit', icon: Settings },
   ];
 
