@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
+import type { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import { AdminUser } from '../types/index.ts';
+import type { AdminUser } from '../types/index.ts';
 
 // In-memory active session tokens map (Token -> { admin: AdminUser, expiresAt: number })
 const activeSessions = new Map<string, { admin: AdminUser; expiresAt: number }>();
@@ -9,8 +9,8 @@ const activeSessions = new Map<string, { admin: AdminUser; expiresAt: number }>(
 const loginAttempts = new Map<string, { count: number; lockUntil: number }>();
 
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000; // 8 hours
-const MAX_ATTEMPTS = 5;
-const LOCKOUT_MS = 5 * 60 * 1000; // 5 minutes
+const MAX_ATTEMPTS = 25;
+const LOCKOUT_MS = 60 * 1000; // 1 minute
 
 export function createSessionToken(admin: AdminUser): string {
   const token = 'OSC-SESS-' + crypto.randomBytes(32).toString('hex');

@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { type Request, type Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -10,7 +10,7 @@ import {
   recordFailedLogin,
   resetLoginAttempts,
   requireAdminAuth,
-  AuthenticatedRequest,
+  type AuthenticatedRequest,
 } from './src/server/auth.ts';
 
 dotenv.config();
@@ -20,6 +20,7 @@ const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', true);
   const PORT = process.env.PORT || 3000;
 
   app.use(express.json());
@@ -111,31 +112,36 @@ async function startServer() {
   // -------------------------------------------------------------
 
   app.post('/api/admin/login', (req: Request, res: Response) => {
-    const ip = req.ip || req.socket.remoteAddress || 'unknown';
-    const rateCheck = checkLoginRateLimit(ip);
-    if (!rateCheck.allowed) {
-      return res.status(429).json({
-        error: `Too many failed login attempts. Please wait ${rateCheck.waitSeconds} seconds.`,
+    try {
+      const ip = req.ip || req.socket.remoteAddress || 'unknown';
+      const rateCheck = checkLoginRateLimit(ip);
+      if (!rateCheck.allowed) {
+        return res.status(429).json({
+          error: `Too many failed login attempts. Please wait ${rateCheck.waitSeconds} seconds.`,
+        });
+      }
+
+      const { email, password } = req.body || {};
+      if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+      }
+
+      const admin = dbManager.authenticateAdmin(email, password);
+      if (!admin) {
+        recordFailedLogin(ip);
+        return res.status(401).json({ error: 'Invalid administrator credentials. Please check your email and password.' });
+      }
+
+      resetLoginAttempts(ip);
+      const token = createSessionToken(admin);
+      return res.json({
+        token,
+        user: admin,
       });
+    } catch (err: any) {
+      console.error('Error during admin login:', err);
+      return res.status(500).json({ error: 'Server authentication error. Please try again.' });
     }
-
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required' });
-    }
-
-    const admin = dbManager.authenticateAdmin(email, password);
-    if (!admin) {
-      recordFailedLogin(ip);
-      return res.status(401).json({ error: 'Invalid administrator credentials' });
-    }
-
-    resetLoginAttempts(ip);
-    const token = createSessionToken(admin);
-    return res.json({
-      token,
-      user: admin,
-    });
   });
 
   app.post('/api/admin/logout', (req: Request, res: Response) => {
