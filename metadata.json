@@ -1,0 +1,10 @@
+{
+  "name": "Remix OSC Duty Scholars Attendance Checking System",
+  "description": "A cloud-based attendance checking system for OSC duty scholars via camera and QR code scanner, featuring automatic time-in/out tracking and a private admin portal.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
